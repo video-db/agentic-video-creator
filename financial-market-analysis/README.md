@@ -139,12 +139,20 @@ This project can work well with the following skills in an agentic tool:
 - yahoo/market data fetchers
 - SEC filing fetchers
 
+### External references
+- URL-to-Markdown skill reference: https://github.com/ash-ishh/skills/tree/main/url-to-markdown
+- Playwright skill reference: https://github.com/openai/skills/blob/main/skills/.curated/playwright/SKILL.md
+
 ---
 
 ## Local skill entrypoint
 
 A reusable local skill is documented here:
 - `skills/financial-news-video-agent/SKILL.md`
+
+Related references:
+- URL-to-Markdown: https://github.com/ash-ishh/skills/tree/main/url-to-markdown
+- Playwright: https://github.com/openai/skills/blob/main/skills/.curated/playwright/SKILL.md
 
 Use that skill when you want the agent to:
 - create a date-based financial brief

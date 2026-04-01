@@ -19,6 +19,10 @@ Use this skill when the user wants to:
 - URL/article extraction
 - optional screenshot/browser support
 
+Useful external skill references:
+- URL-to-Markdown: https://github.com/ash-ishh/skills/tree/main/url-to-markdown
+- Playwright: https://github.com/openai/skills/blob/main/skills/.curated/playwright/SKILL.md
+
 ## Inputs to gather
 Before running, gather:
 - target date
@@ -41,6 +45,8 @@ Store in:
 YYYY-MM-DD/research/
 ```
 
+Prefer using a URL-to-Markdown workflow/skill for article extraction.
+
 Collect:
 - official releases
 - reputable articles
@@ -51,6 +57,8 @@ Store in:
 ```text
 YYYY-MM-DD/screenshots/
 ```
+
+Prefer a Playwright-based screenshot workflow/skill for webpage capture.
 
 Create video-friendly crops from full screenshots.
 Do not place raw tall screenshots directly into the final timeline.

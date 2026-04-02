@@ -2,7 +2,7 @@
 
 **Autonomous multi-source news video creator** — give it a topic, get a professional 3-4 minute broadcast-style video.
 
-[![VideoDB](https://img.shields.io/badge/Powered_by-VideoDB-orange)](https://videodb.io)
+[![Watch Demo](https://img.shields.io/badge/▶_Watch-Demo_Video-blue?style=for-the-badge)](https://console.videodb.io/player?url=https://play.videodb.io/v1/43570285-1d6e-4548-86e6-294201d2418f.m3u8)
 
 ---
 
@@ -47,7 +47,11 @@ This skill autonomously creates professional news digest videos from any topic b
 Just give the agent a news topic:
 
 ```
-Create a news digest video about "climate summit 2026"
+Create a news digest video about the Iran-US conflict
+```
+
+```
+Make a news digest covering the recent tech regulation summit
 ```
 
 The agent will autonomously:
@@ -178,40 +182,22 @@ Every output includes:
 
 ## Example Output
 
-**Iran War 2026** (3:31) — Multi-source analysis with Al Jazeera, BBC, CNN clips:  
-[▶ Watch Video](https://console.videodb.io/player?url=https://play.videodb.io/v1/e979397c-58c3-4f74-ad45-e5b4736d1d77.m3u8)
+**Iran War 2026** — Multi-source analysis with Al Jazeera, BBC, CNN clips:  
+[▶ Watch Video](https://console.videodb.io/player?url=https://play.videodb.io/v1/43570285-1d6e-4548-86e6-294201d2418f.m3u8)
 
 For complete registry structure and asset organization, see agent-generated runs in `outputs/` folder.
 
 ---
 
-## Credits
+## Community & Support
 
-- **VideoDB:** Video infrastructure, indexing, search, TTS, timeline editing
-- **Browser-use:** Web research and screenshot capture
-- **Background music:** "The Mountain - News Music" (490008)
-
----
-
-## License
-
-See parent directory for license information.
+- **Docs**: [docs.videodb.io](https://docs.videodb.io)
+- **Issues**: [GitHub Issues](https://github.com/video-db/agentic-video-creator/issues)
+- **Discord**: [Join community](https://discord.gg/py9P639jGz)
+- **Console**: [Get API key](https://console.videodb.io)
 
 ---
 
-## Support
+<p align="center">Made with ❤️ by the <a href="https://videodb.io">VideoDB</a> team</p>
 
-For detailed workflow instructions, see [AGENTS.md](AGENTS.md).
-
-For reference implementations, see agent-generated runs in `outputs/` folder.
-
-**Verify setup:**
-```bash
-python3 << 'EOF'
-from dotenv import load_dotenv
-load_dotenv(".env")
-import videodb
-conn = videodb.connect()
-print(f"✓ VideoDB connected: {conn}")
-EOF
-```
+---

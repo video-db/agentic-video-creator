@@ -24,10 +24,10 @@ Built on [VideoDB](https://videodb.io) for video infrastructure and designed for
 
 ## Available Skills
 
-| Skill | Description | Output | Runtime |
-|-------|-------------|--------|---------|
-| **[news-digest](news-digest/)** | Multi-source news digest videos with YouTube clips, tweets, and article analysis | 3-4 min broadcast-style video | ~15-20 min |
-| **[financial-market-analysis](financial-market-analysis/)** | Proof-backed financial news recaps with charts, screenshots, and selected clips | Custom length market summary | Varies |
+| Skill | Description | Output | Demo |
+|-------|-------------|--------|------|
+| **[news-digest](news-digest/)** | Multi-source news digest videos with YouTube clips, tweets, and article analysis | 3-4 min broadcast-style video | [▶ Watch](https://console.videodb.io/player?url=https://play.videodb.io/v1/43570285-1d6e-4548-86e6-294201d2418f.m3u8) |
+| **[financial-market-analysis](financial-market-analysis/)** | Proof-backed financial news recaps with charts, screenshots, and selected clips | Custom length market summary | [▶ Watch](https://console.videodb.io/player?url=https://play.videodb.io/v1/f37914dd-5239-4c10-aa2e-006f9095ac7c.m3u8) |
 
 ---
 
@@ -86,7 +86,7 @@ Each agentic skill follows this pattern:
 
 ### News Digest
 **Iran War 2026** — Multi-source analysis with Al Jazeera, BBC, CNN  
-[▶ Watch Video](https://console.videodb.io/player?url=https://play.videodb.io/v1/e979397c-58c3-4f74-ad45-e5b4736d1d77.m3u8) (3:31)
+[▶ Watch Video](https://console.videodb.io/player?url=https://play.videodb.io/v1/43570285-1d6e-4548-86e6-294201d2418f.m3u8)
 
 ### Financial Market Analysis
 **Daily Market Recap** — Proof-backed financial news with charts, screenshots, and clips  

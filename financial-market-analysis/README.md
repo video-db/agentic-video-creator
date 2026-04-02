@@ -1,13 +1,15 @@
 # Proof-First Financial News Video Agent
 
+This skill is designed so an agentic coding tool can reproduce the workflow with minimal manual work.
+
+[![Watch Demo](https://img.shields.io/badge/▶_Watch-Demo_Video-blue?style=for-the-badge)](https://console.videodb.io/player?url=https://play.videodb.io/v1/f37914dd-5239-4c10-aa2e-006f9095ac7c.m3u8)
+
 Build daily financial news videos backed by:
 - article proof
 - official-source proof
 - chart proof
 - optional YouTube/news clips
 - narrated summary video output
-
-This repo is designed so an agentic coding tool can reproduce the workflow with minimal manual work.
 
 ---
 
@@ -29,7 +31,7 @@ The emphasis is **proof-first**, not hype-first.
 
 ## Who this is for
 
-This repo is for people building:
+This skill is for people building:
 - autonomous news-video agents
 - market recap video pipelines
 - proof-backed financial content workflows
@@ -80,7 +82,7 @@ Used for:
 Use `uv` to run scripts.
 
 ## 3. Optional browser screenshot support
-For article screenshots, this repo uses Playwright CLI where available.
+For article screenshots, this skill uses Playwright CLI where available.
 
 ---
 
@@ -246,7 +248,7 @@ If publishing this for others, include:
 5. one example date folder
 6. one example generated report and storyboard
 
-Included example in this repo:
+Included example in this skill:
 - `examples/2026-04-01/`
 - `examples/2026-04-01/reports/2026-04-01-midday-financial-news-brief.md`
 - `examples/2026-04-01/reports/2026-04-01-video-storyboard.md`
@@ -260,7 +262,7 @@ That gives others both:
 
 ## Suggested public positioning
 
-You can describe this repo as:
+You can describe this skill as:
 
 > A proof-first financial news video agent that turns daily market news, charts, screenshots, and selected news clips into coherent evidence-backed recap videos.
 
@@ -298,3 +300,18 @@ The example folder is self-contained and includes:
 - built slide assets
 - scripts
 - `video_result.json`
+
+---
+
+## Community & Support
+
+- **Docs**: [docs.videodb.io](https://docs.videodb.io)
+- **Issues**: [GitHub Issues](https://github.com/video-db/agentic-video-creator/issues)
+- **Discord**: [Join community](https://discord.gg/py9P639jGz)
+- **Console**: [Get API key](https://console.videodb.io)
+
+---
+
+<p align="center">Made with ❤️ by the <a href="https://videodb.io">VideoDB</a> team</p>
+
+---

@@ -32,6 +32,7 @@ Built on [VideoDB](https://videodb.io) for video infrastructure and designed for
 
 | Agent | Description | Output | Demo |
 |-------|-------------|--------|------|
+| **[content-creator](content-creator/)** | Research any topic, produce a video briefing, then self-review using VideoDB's See + Understand to verify visual-narration alignment frame by frame | 1-2 min video briefing | [▶ Watch](https://console.videodb.io/player?url=https://play.videodb.io/v1/a43d5463-a39d-4aac-994f-abdfb5b3bf2d.m3u8) |
 | **[news-digest](news-digest/)** | Research any topic, gather multi-source evidence (YouTube, tweets, articles), deliver as broadcast-style video | 3-4 min video report | [▶ Watch](https://console.videodb.io/player?url=https://play.videodb.io/v1/43570285-1d6e-4548-86e6-294201d2418f.m3u8) |
 | **[financial-market-analysis](financial-market-analysis/)** | Investigate financial markets with charts, screenshots, and verified clips | Custom length market report | [▶ Watch](https://console.videodb.io/player?url=https://play.videodb.io/v1/f37914dd-5239-4c10-aa2e-006f9095ac7c.m3u8) |
 
@@ -89,6 +90,10 @@ Each agent follows this pattern:
 ---
 
 ## Example Outputs
+
+### Content Creator
+**r/ClaudeAI Weekly Recap** — Self-reviewed video briefing covering top posts, memes, and drama  
+[▶ Watch Video](https://console.videodb.io/player?url=https://play.videodb.io/v1/a43d5463-a39d-4aac-994f-abdfb5b3bf2d.m3u8)
 
 ### News Digest
 **Iran War 2026** — Multi-source analysis with Al Jazeera, BBC, CNN  

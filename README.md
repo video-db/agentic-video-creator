@@ -25,6 +25,12 @@ Agents research the internet, filter noise, and stream you clean video briefings
 👉 No algorithmic manipulation
 
 ---
+
+## Demo
+
+https://github.com/user-attachments/assets/9b7f4092-3e3b-4de7-b335-80cc7369df59
+
+---
 The internet is noisy, biased, and algorithm-driven.
 
 You don’t control:

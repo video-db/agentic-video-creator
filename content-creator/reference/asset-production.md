@@ -1,188 +1,170 @@
 # Asset Production
 
-For each segment in the script, create a visual asset using the best approach for its `visual_type`. You are the host — you're not just generating pretty pictures, you're producing footage for your show.
+For each segment in the script, create a visual asset using the best approach for its `visual_type`. You are the host — you're producing footage for your show, not generating pretty pictures.
 
-## The Five Approaches
+## Universal Sourcing Hierarchy
 
-### 1. AI-Generated Images
+**Before producing ANY visual, follow this order:**
 
-**Use for:** `image_scene` — abstract concepts, mood backgrounds, establishing shots where static is intentional.
+```
+1. Search asset library collection (recipes/sourcing/asset-library.md)
+      ↓ not found (score < 0.5)
+2. Source from external API (appropriate sourcing recipe below)
+      ↓ API unavailable or no results
+3. Generate with AI (generate_image, generate_video, TextAsset)
+      ↓ after sourcing/generating
+4. Upload to asset library for future reuse
+```
 
-Generate an image using the `videodb` skill's `generate_image` capability. Specify `16:9` aspect ratio for landscape, `9:16` for vertical.
+## Sourcing Recipe Router
 
-**When to pick this:**
-- The concept is abstract and hard to film or code-render (e.g., "the future of computing")
-- You need a quick atmospheric background behind text overlays
-- The segment is short (under 8 seconds) and static won't feel stale
+Determines which sourcing recipe to read for each visual type:
 
-**When NOT to pick this:**
-- You have actual data to show (use `data_viz` instead)
-- You're citing a real source (use `browser_capture` instead)
-- Two or more consecutive segments already use static images
+| Visual Type | Sourcing Recipe | Then Visual Recipe |
+|---|---|---|
+| `stock_footage` | [stock-footage.md](recipes/sourcing/stock-footage.md) | (asset IS the visual) |
+| `motion_scene` | [stock-footage.md](recipes/sourcing/stock-footage.md) (video) | Fallback: `generate_video` |
+| `image_scene` | [stock-footage.md](recipes/sourcing/stock-footage.md) (photo) | Fallback: `generate_image` |
+| `meme_insert` | [meme-sourcing.md](recipes/sourcing/meme-sourcing.md) | [meme-humor.md](recipes/meme-humor.md) |
+| `logo_composition` | [logo-sourcing.md](recipes/sourcing/logo-sourcing.md) | (compose on timeline with scale/position) |
+| `code_editor` | (none — always rendered) | [code-slide.md](recipes/code-slide.md) |
+| `diagram_animation` | (none — always rendered) | [diagram-flow.md](recipes/diagram-flow.md) |
+| `browser_capture` | (none — always live) | [browser-recording.md](../browser-recording.md) |
+| `kinetic_text` | (none — TextAsset) | [kinetic-text.md](recipes/kinetic-text.md) |
+| `split_screen` | (none — always rendered) | [split-compare.md](recipes/split-compare.md) |
+| `data_viz` | (none — always rendered) | [data-viz.md](recipes/data-viz.md) |
 
-### 2. AI-Generated Video Clips
+**For overlays**, read:
+- [gif-reactions.md](recipes/sourcing/gif-reactions.md) — PiP reactions and animated clips
+- [logo-sourcing.md](recipes/sourcing/logo-sourcing.md) — logo badges in corners
+- [stock-footage.md](recipes/sourcing/stock-footage.md) — ambient loop backgrounds
 
-**Use for:** `motion_scene` — hooks, transitions, atmospheric b-roll with actual motion.
+## Visual Type → Recipe Files
 
-Generate a short video clip using the `videodb` skill's `generate_video` capability. These are 5-8 seconds of AI-generated motion.
+Each visual type has a dedicated recipe file with detailed production instructions, style guides, code examples, and fallback chains. **Read the recipe before producing each visual type.** For Remotion-rendered visual types, also read [remotion-setup.md](recipes/remotion-setup.md) for component definitions and rendering commands.
 
-**When to pick this:**
-- Opening hook — motion grabs attention
-- Scene-setting — "the world of X" with atmospheric visuals
-- Transitions between major sections
-- Emotional beats where mood matters more than data
+| Visual Type | Recipe File | Primary Method |
+|---|---|---|
+| `code_editor` | [code-slide.md](recipes/code-slide.md) | Remotion → Playwright HTML |
+| `meme_insert` | [meme-humor.md](recipes/meme-humor.md) | Real memes (Imgflip/GIPHY) → `generate_image` |
+| `kinetic_text` | [kinetic-text.md](recipes/kinetic-text.md) | VideoDB TextAsset |
+| `diagram_animation` | [diagram-flow.md](recipes/diagram-flow.md) | Remotion SVG → Mermaid.js |
+| `data_viz` | [data-viz.md](recipes/data-viz.md) | Remotion → Chart.js |
+| `split_screen` | [split-compare.md](recipes/split-compare.md) | Remotion → Playwright dual HTML |
+| `overlay (PiP)` | [overlay-techniques.md](recipes/overlay-techniques.md) | Real GIFs (GIPHY) / real logos (Simple Icons) |
+| `motion_scene` | (below) | Stock video (Pexels) → `generate_video` |
+| `browser_capture` | [browser-recording.md](../browser-recording.md) | Playwright |
+| `image_scene` | (below) | Stock photo (Pexels) → `generate_image` |
+| `logo_composition` | (below) | Real logos (Simple Icons CDN) |
+| `stock_footage` | (below) | Pexels/Pixabay API |
 
-**Tips:**
-- Prompt for camera motion: "drone shot pushing forward", "slow pan across", "camera pulling back to reveal"
-- These clips are short (5-8s). If a segment is longer, loop or combine with a text overlay.
-- Mute the generated video's audio — your narration and music track replace it.
+## Banned Production Approaches
 
-### 3. Remotion (Code-Rendered Video)
+These combinations produce broken results. The self-review will reject them.
 
-**Use for:** `data_viz` — animated charts, bar graphs, line charts, counters, comparisons, infographics.
+| Visual Type | BANNED Method | Why |
+|---|---|---|
+| `code_editor` | `generate_image` | AI hallucinates code — garbled syntax, made-up variables |
+| `code_editor` | `generate_video` | Same problem, animated garbage |
+| `code_editor` | ray.so/carbon.sh via URL encoding | `urllib.parse.quote()` corrupts multi-line code |
+| `diagram_animation` | `generate_image` (for animation) | No animation possible |
+| `split_screen` | `generate_image` | Layout unreliable — panels misaligned |
+| `kinetic_text` | `generate_image` | Use TextAsset — faster, pixel-perfect |
+| `browser_capture` | `generate_image` | The whole point is showing REAL content |
+| `logo_composition` | `generate_image` | Logos will be wrong. Use real logos from CDN |
 
-Write a Remotion React component that animates the data, render it to a video file, upload to VideoDB, and use it as an asset on the timeline.
+## Simple Visual Types (No Dedicated Recipe)
 
-**When to pick this:**
-- You have specific numbers to visualize (market growth, adoption rates, comparisons)
-- You want animated counters ticking up to a number
-- You need a side-by-side comparison that builds piece by piece
-- The data tells a story that motion makes clearer
+### Motion Scene
 
-**What to build:**
-- Bar chart with bars growing to their values
-- Line chart with a line drawing itself
-- Counter animating from 0 to the target number
-- Split-screen comparison with elements appearing one at a time
-- Timeline/roadmap with milestones appearing sequentially
+Atmospheric b-roll, hooks, transitions.
 
-**If Remotion is unavailable:** Fall back to kinetic text showing the key numbers with bold styling, or generate an image of the chart as a static fallback.
+**Primary:** Search Pexels for cinematic video clips (see [stock-footage.md](recipes/sourcing/stock-footage.md)).
 
-### 4. Browser Capture (Live Research Footage)
+**Fallback:** AI video generation:
+```python
+video_clip = coll.generate_video(
+    prompt="Drone shot pushing forward over a city at night, neon lights reflecting, cinematic",
+)
+```
 
-**Use for:** `browser_capture` — citing sources, showing evidence, demonstrating the research process.
+- Duration: 5-8 seconds. Always mute (`volume=0`).
+- Good for: hooks, transitions between major sections, emotional beats.
 
-Navigate to real web pages (tweets, articles, reports, search results) and capture them as video or screenshots. This creates authentic "journalist showing their work" footage.
+### Image Scene
 
-**When to pick this:**
-- Citing a specific report, article, or dataset
-- Showing a Google search to establish that the topic is trending
-- Navigating a company's website or product page
-- Showing a GitHub repo, documentation, or technical resource
-- **Showing real tweets/posts** — navigate to a tweet by a CEO, researcher, or public figure and screenshot or record it. "As Sundar Pichai tweeted last week..." while the actual tweet is on screen.
-- **Showing social proof** — LinkedIn posts, Reddit threads, Hacker News comments, Product Hunt launches
-- **Showing headlines** — navigate to NYT, TechCrunch, The Verge and show the actual headline
-- Any moment where credibility comes from showing the real source
+Abstract concepts, mood backgrounds, establishing shots.
 
-**Two modes** — both use Playwright Python. See [browser-recording.md](browser-recording.md) for the full API patterns.
+**Primary:** Search Pexels for matching photos (see [stock-footage.md](recipes/sourcing/stock-footage.md)).
 
-*Screen recording (dynamic):*
-Playwright natively records browser navigation as video via `record_video_dir`. Everything the browser does — navigation, scrolling, page loads — gets captured as a `.webm` file.
-1. Write a short Playwright script that opens the URL, scrolls to relevant content, pauses on key sections
-2. Playwright saves the recording as a video file on disk
-3. Upload the video to VideoDB and use it as a video asset on the timeline
+**Fallback:** AI image generation:
+```python
+bg_img = coll.generate_image(
+    prompt="Abstract dark technology background with subtle blue gradient and digital particles, minimalist",
+    aspect_ratio="16:9",
+)
+```
 
-Use this when you want to show the journey — scrolling through search results, navigating between pages, the "live research" effect.
+- Keep segments under 5 seconds (static images over 5s feel like a slideshow).
+- Pair with ambient loop overlay for segments >4s.
 
-*Screenshot (static but fast):*
-Use Playwright's `page.screenshot()` to capture a single frame of a page.
-1. Navigate to the exact URL (a specific tweet, article, chart)
-2. Take a full-page or element-level screenshot
-3. Upload as an image asset — use on the timeline as a still with narration over it
+### Logo Composition
 
-Use this when you just need to flash a single piece of evidence — one tweet, one headline, one chart.
+Tech logo grids, framework comparisons, ecosystem overviews.
 
-**Tips:**
-- Keep browser segments to 10-15 seconds max — screen recordings lose attention fast
-- Scroll slowly and deliberately — the viewer needs time to read headlines
-- Highlight the key stat or quote by pausing on it for 2-3 seconds
-- Your narration should reference what's on screen: "as Sundar Pichai put it...", "this report from McKinsey shows..."
-- Works best when the source is visually clean (avoid cluttered pages)
-- For tweets: navigate to the individual tweet URL, not the timeline — cleaner framing
-- For articles: pause on the headline and subhead, not the full body text
+**Primary:** Source real logos from Simple Icons CDN (see [logo-sourcing.md](recipes/sourcing/logo-sourcing.md)). Compose multiple logos on a dark background using VideoDB timeline positioning.
 
-**If Playwright is unavailable:** Fall back to kinetic text quoting the source with attribution: `"AI will transform every industry" — Sundar Pichai, CEO Google`
+**Fallback (Remotion):** Animate logos appearing with spring physics and stagger.
 
-### 5. Kinetic Text
+### Stock Footage
 
-**Use for:** `kinetic_text` — key quotes, stat highlights, takeaway moments, punchy declarations.
+Real-world b-roll from stock APIs.
 
-Build text compositions using the `videodb` skill's `TextAsset` with staggered timing, fade transitions, and bold styling. No generation needed — this is pure programmatic composition.
+**Primary:** Pexels/Pixabay (see [stock-footage.md](recipes/sourcing/stock-footage.md)).
 
-**When to pick this:**
-- A powerful stat that deserves to fill the screen: "73% of developers now use AI tools"
-- A key quote from the research
-- The takeaway moment — the "so what" statement
-- Transitions between sections (a single word or phrase as a palate cleanser)
+**Fallback:** `generate_video` with a similar prompt.
 
-**How to make it feel dynamic:**
-- Stagger lines — line 1 appears at t=0, line 2 at t=0.5, line 3 at t=1.0
-- Use fade-in transitions on each line
-- Large font, bold weight, high contrast (white text on dark background or vice versa)
-- Keep text short — max 6-8 words per line, max 3 lines per screen
-- Add a subtle background color or gradient to avoid floating text on black
+- Keep to 3-5 seconds, mute audio, prefer clips with camera movement.
 
-### Design Standards for Text Overlays
+## Design Standards for Text Overlays
 
-These are **hard minimums**, not suggestions. The self-review phase will flag any overlay that falls below these thresholds. All sizes assume 1280x720 resolution — scale proportionally for other resolutions.
+Hard minimums for any text rendered on screen (all sizes at 1280x720):
 
-**Kinetic text (hero stat / segment star):**
-- Font size: 52-72px
-- Must fill at least 60% of frame width
-- This is the visual centerpiece of the segment — it should dominate the screen
-- Use `Position.bottom` with `Offset(y=-0.3)` for center-screen placement (see gotcha below)
-- Background: semi-opaque bar at 0.6-0.8 opacity, covering at least 50% of frame width
-- If `TextAsset` can't deliver this impact, generate an AI image with the text baked in instead. Prompt: include the exact text as the dominant visual element in the image.
+| Text Role | Font Size | Frame Width Coverage |
+|---|---|---|
+| Hero stat / section header | 52-72px | 60%+ |
+| Data callout (lower-third) | 36-48px | 40%+ |
+| Title card | 48-60px | 60%+ |
+| Subtitle / attribution | 24-32px | — |
 
-**Data callouts (lower-third style):**
-- Font size: 36-48px
-- `Position.bottom` with small negative y offset (e.g., `Offset(y=-0.08)`)
-- Background bar: semi-opaque black at 0.6-0.75 opacity, at least 40% of frame width
-- Must be readable in under 1 second at normal playback speed
-- The benchmark: would this look at home as a lower-third on Bloomberg or CNN? If it looks like a tooltip, it's too small.
+Every text overlay MUST have a semi-opaque background bar (opacity 0.6-0.8).
 
-**Title cards:**
-- Font size: 48-60px
-- Use `Position.bottom` with `Offset(y=-0.3)` for center-screen, or `Position.bottom` with `Offset(y=-0.08)` for lower-third
-- Background bar: 0.6-0.7 opacity, covering 60%+ of frame width
-- Should feel like a show title, not a filename
-
-**Subtitle / attribution text:**
-- Font size: 24-32px
-- Muted color (grey, not white)
-- `Position.bottom` with minimal offset
-- No background bar needed — this is secondary information
-
-**Known gotcha: `TextAsset` at `Position.center` with `Background` may render invisibly.** This is a confirmed issue in the VideoDB Editor API — center-positioned text with a Background box can produce an invisible or near-invisible result. Always use `Position.bottom` with a negative y `Offset` to simulate center-screen placement, or generate an AI image with the text baked in for any screen-dominating text (hero stats, title cards, close CTAs).
-
-**The quality test:** If the callout doesn't look like it belongs on a Bloomberg terminal, a Netflix documentary title card, or a MKBHD video intro, it's too weak. Regenerate as a text-embedded image if `TextAsset` can't deliver the design quality needed.
+**Known gotcha:** `TextAsset` at `Position.center` with `Background` may render invisibly. Use `Position.bottom` with `Offset(y=-0.3)` to simulate center placement.
 
 ## Production Order
 
-1. **Narration audio first.** Generate voiceover for each segment using the `videodb` skill. You need the exact duration of each narration clip to time everything else. **Important:** `voice.length` may return a string — always cast with `float(voice.length)`. Store exact values; use `math.floor(length * 100) / 100` when setting clip durations to avoid exceeding the actual audio length.
-2. **Background music second.** Generate one track for the full video duration. **Important:** `generate_music(duration=N)` may return audio significantly shorter than N seconds (e.g., 30s when you asked for 90s). Always check `music.length` after generation. If shorter than the total video, plan to loop the track by placing multiple `AudioAsset` clips at staggered start times on the music track.
-3. **Visuals in parallel where possible.** AI images and AI video can be generated concurrently. Remotion renders and browser captures may need sequential execution.
+1. **Narration audio first.** Generate voiceover for each segment. Always cast `float(voice.length)` — it may return a string. Truncate with `math.floor(length * 100) / 100`.
+2. **Background music second.** Generate one track. Check `music.length` — loop if needed.
+3. **SFX third (if format requires it).** Whooshes, pops, comedic stings.
+4. **Visuals: source before generate.** Search asset library and external APIs in parallel where possible. Generate AI assets only for what can't be sourced.
 
-**Critical:** AI-generated videos (`generate_video()`) are 5-8 seconds maximum. If a segment's narration is longer than the generated video (e.g., a 13s hook segment with an 8s video), do **not** set the clip duration beyond the video's actual length — this will raise `InvalidRequestError`. Instead, start the next segment's visual asset early to fill the visual gap, or generate a supplementary image to cover the remaining time.
+**Critical:** AI-generated videos are 5-8 seconds max. Never set clip duration beyond actual `.length`.
 
 ## Mixing Approaches
 
-A well-produced briefing uses 3-4 different approaches across its segments. Here are example mixes:
-
-**Data-heavy topic (market analysis, tech trends):**
+### Briefing format (data-heavy topic):
 ```
 hook: motion_scene → context: browser_capture → insight 1: data_viz →
 insight 2: kinetic_text → takeaway: data_viz → close: kinetic_text
 ```
 
-**Narrative topic (company story, event recap):**
+### Fireship explainer format:
 ```
-hook: motion_scene → context: browser_capture → insight 1: browser_capture →
-insight 2: motion_scene → takeaway: kinetic_text → close: kinetic_text
+hook: kinetic_text → topic1_intro: kinetic_text → topic1_code: code_editor →
+topic1_meme: meme_insert → topic2_intro: kinetic_text → topic2_code: code_editor →
+topic2_compare: split_screen → topic2_meme: meme_insert →
+topic3_intro: kinetic_text → topic3_code: code_editor →
+topic3_data: data_viz → takeaway: kinetic_text → cta: logo_composition
 ```
 
-**Abstract topic (philosophy, future predictions):**
-```
-hook: kinetic_text → context: motion_scene → insight 1: data_viz →
-insight 2: motion_scene → takeaway: kinetic_text → close: image_scene
-```
+**Key principle:** Visual type should change every 2-3 segments. If you find 3 consecutive `code_editor` segments, break them up with a `meme_insert`, `diagram_animation`, or `kinetic_text`.

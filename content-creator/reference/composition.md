@@ -172,6 +172,76 @@ These are hard constraints from the VideoDB Editor API. Violating them causes `I
 **AI-generated videos are 5-8 seconds max:**
 - Never set clip duration beyond video's actual length.
 
+## Remotion-Rendered Segments: No TextAsset Overlays
+
+**CRITICAL RULE:** When a segment's main visual is a Remotion-rendered video (CodeEditor, KineticText, DiagramFlow, BarChart, SplitCompare, CounterReveal), that video already contains text baked into its frames. **Do NOT add any `TextAsset` overlay (data callout, emphasis text, subtitle) on top of it.** Doing so produces ugly double-text where VideoDB's TextAsset renders on top of Remotion's baked-in text.
+
+```python
+# During composition, track which segments used Remotion
+REMOTION_VISUAL_TYPES = {"code_editor", "kinetic_text", "diagram_animation", "data_viz", "split_screen"}
+
+def segment_is_remotion(seg):
+    """Check if this segment's visual was produced by Remotion."""
+    return (seg.get("production_method") == "remotion" or
+            (REMOTION_AVAILABLE and seg.get("visual_type") in REMOTION_VISUAL_TYPES))
+
+# When placing text overlays / data callouts:
+for seg in script["segments"]:
+    if segment_is_remotion(seg):
+        # SKIP text overlays — Remotion video already has text baked in
+        continue
+    # ... add TextAsset clips only for non-Remotion segments ...
+```
+
+**What IS allowed on Remotion segments:**
+- Logo badges (small, corner-positioned, don't overlap text) — `scale 0.08, Position.top_right`
+- Ambient loops underneath (they render behind, not on top)
+- SFX audio clips (audio doesn't overlap visually)
+
+**What is BANNED on Remotion segments:**
+- `TextAsset` data callouts
+- `TextAsset` emphasis/hero text
+- `TextAsset` title overlays
+- Any `TextAsset` that would render text on top of the video's existing text
+
+## Narration Audio Continuity
+
+**CRITICAL RULE:** Narration audio must play continuously across the video with no gaps or overlaps at segment boundaries. Audio drops during transitions are caused by:
+
+1. **Gaps between narration clips:** Segment N's narration ends at t=10.2s but segment N+1's narration starts at t=11.0s → 0.8s of silence.
+2. **Overlapping narration clips:** Two narration clips placed at overlapping timestamps → one gets suppressed.
+
+### How to prevent audio drops
+
+```python
+# Build narration as a continuous chain — each clip starts exactly where the previous one ended.
+narration_track = Track()
+narration_cursor = 0  # running position in seconds
+
+for seg in script["segments"]:
+    voice = voice_assets[seg["id"]]
+    voice_len = math.floor(float(voice.length) * 100) / 100
+
+    # Place narration at the current cursor position (integer start)
+    start = int(narration_cursor)
+    narration_track.add_clip(start, Clip(
+        asset=AudioAsset(id=voice.id),
+        duration=voice_len,
+    ))
+
+    # Advance cursor by the exact voice duration (not segment visual duration)
+    narration_cursor = start + voice_len
+
+# The visual track should be aligned to the same segment boundaries.
+# Use narration_cursor positions as the authoritative timeline for visuals too.
+```
+
+### Key rules:
+- **Narration is the master clock.** Segment boundaries are defined by narration timing, not visual asset lengths.
+- **No gaps:** Each narration clip starts exactly at `int(previous_end)`. If previous ends at 10.3s, next starts at 10.
+- **No overlaps:** Never place two narration clips that would overlap in time.
+- **Visual clips fill to match:** Each visual segment's duration is set to match its narration duration (or slightly exceed it for visual breathing room at the end of the video).
+
 ## Overlay Composition (Picture-in-Picture)
 
 VideoDB supports simultaneous clips on different tracks with `scale`, `position`, `offset`, and `opacity`. This enables picture-in-picture overlays — small visual elements that play on top of the main visual.
@@ -259,8 +329,133 @@ Place `ambient_track` BELOW the main visual track so it renders behind it. If th
 
 - **Max 2 overlays per segment.** More than that clutters the frame.
 - **3-5 total overlays per explainer video.** They're spice, not the meal.
+- **Never overlay TextAsset on Remotion-rendered segments.** Remotion videos have text baked in — adding TextAsset creates ugly double-text. Logo badges (small, corner) are OK.
 - **Never overlay on top of kinetic_text segments.** The text IS the visual — don't compete with it.
 - **Never overlay on meme_insert segments.** The meme IS the content.
+
+### Building the overlay track from the plan (Phase 4)
+
+During composition, read `{WORK_DIR}/scripts/overlay_plan.json` (produced in Phase 3) and place each overlay on the overlay track:
+
+```python
+import json
+
+with open(f"{WORK_DIR}/scripts/overlay_plan.json") as f:
+    overlay_plan = json.load(f)
+with open(f"{WORK_DIR}/scripts/overlay_assets.json") as f:
+    overlay_assets = json.load(f)  # {segment_id: {id, type, length}}
+
+overlay_track = Track()
+overlay_count = 0
+
+for entry in overlay_plan:
+    sid = entry["segment_id"]
+    seg_start = segment_starts[sid]  # from your segment timing dict
+    seg_dur = segment_durations[sid]
+    asset_info = overlay_assets.get(sid)
+    if not asset_info:
+        continue
+
+    if entry["type"] == "logo_badge":
+        overlay_track.add_clip(seg_start, Clip(
+            asset=ImageAsset(id=asset_info["id"]),
+            duration=min(seg_dur, 8),
+            scale=entry.get("scale", 0.08),
+            position=Position.top_right,
+            offset=Offset(x=-0.03, y=0.03),
+            opacity=0.85,
+        ))
+        overlay_count += 1
+
+    elif entry["type"] == "pip_reaction":
+        delay = min(2, seg_dur // 3)
+        if asset_info.get("is_video"):
+            overlay_track.add_clip(seg_start + delay, Clip(
+                asset=VideoAsset(id=asset_info["id"], volume=0),
+                duration=min(3, math.floor(float(asset_info["length"]) * 100) / 100),
+                scale=entry.get("scale", 0.20),
+                position=Position.bottom_right,
+                offset=Offset(x=-0.05, y=-0.05),
+                opacity=0.9,
+            ))
+        else:
+            overlay_track.add_clip(seg_start + delay, Clip(
+                asset=ImageAsset(id=asset_info["id"]),
+                duration=3,
+                scale=entry.get("scale", 0.20),
+                position=Position.bottom_right,
+                offset=Offset(x=-0.05, y=-0.05),
+                opacity=0.9,
+            ))
+        overlay_count += 1
+
+    elif entry["type"] == "stat_counter":
+        overlay_track.add_clip(seg_start + 1, Clip(
+            asset=TextAsset(
+                text=entry["text"],
+                font=Font(family="Clear Sans", size=36, color=entry.get("color", "#61DAFB")),
+                background=Background(color="#000000", opacity=0.7, width=250, height=60),
+            ),
+            duration=min(4, seg_dur - 1),
+            position=Position.top_left,
+            offset=Offset(x=0.05, y=0.05),
+        ))
+        overlay_count += 1
+
+# HARD CHECK before generating stream
+assert overlay_count >= 3, f"FAIL: Only {overlay_count} overlays placed — need at least 3"
+print(f"Placed {overlay_count} overlays on overlay track")
+
+# Add overlay track AFTER main visual track (renders on top)
+timeline.add_track(overlay_track)
+```
+
+## Phase 4.5: Add Captions (Optional — User-Requested Only)
+
+**Captions are OFF by default.** Only run this phase if the user explicitly asks for captions (e.g., "add captions", "with subtitles", "include captions").
+
+After the main timeline stream is generated, add speech-synced captions as a final pass. See [recipes/captions.md](recipes/captions.md) for full config, animation styles, and color presets.
+
+```python
+from videodb.editor import (
+    CaptionAsset, FontStyling, BorderAndShadow, Positioning,
+    CaptionAlignment, CaptionAnimation,
+)
+
+captioned_source = coll.upload(url=stream_url)
+captioned_source.index_spoken_words(force=True)
+transcript = captioned_source.get_transcript()
+print(f"Indexed {len(transcript)} transcript segments for captions")
+
+caption_timeline = Timeline(conn)
+caption_timeline.resolution = "1280x720"
+
+cap_track = Track()
+cap_duration = int(captioned_source.length)
+cap_track.add_clip(0, Clip(
+    asset=VideoAsset(id=captioned_source.id, start=0),
+    duration=cap_duration,
+))
+cap_track.add_clip(0, Clip(
+    asset=CaptionAsset(
+        src="auto",
+        font=FontStyling(name="Clear Sans", size=42, bold=True),
+        primary_color="&H00FFFFFF",
+        secondary_color="&H00008000",
+        back_color="&H00000000",
+        border=BorderAndShadow(outline=2, outline_color="&H00000000"),
+        position=Positioning(alignment=CaptionAlignment.bottom_center, margin_v=40),
+        animation=CaptionAnimation.box_highlight,
+    ),
+    duration=cap_duration,
+))
+caption_timeline.add_track(cap_track)
+
+captioned_stream = caption_timeline.generate_stream()
+stream_url = captioned_stream  # replace with captioned version
+```
+
+Captions are **off by default**. Only add them when the user explicitly requests captions/subtitles.
 
 ## Checklist Before Generating Stream
 
@@ -290,3 +485,7 @@ Before calling `timeline.generate_stream()`, verify:
 - [ ] No more than 2 overlays per segment, 3-5 per video total
 - [ ] At least 3 overlay clips placed (logo badges, PiP memes, ambient loops) for explainer format
 - [ ] Meme segments have caption text if raw template was used
+- [ ] **NO TextAsset placed on any Remotion-rendered segment** (code_editor, kinetic_text, diagram, data_viz, split_screen) — Remotion videos already contain baked-in text
+- [ ] Narration clips chain continuously — no gaps or overlaps between consecutive narration clips
+- [ ] Visual segment durations match narration durations (narration is the master clock)
+- [ ] **Captions** (Phase 4.5) — only if user requested: `index_spoken_words` + `CaptionAsset(src="auto")` with `box_highlight` animation

@@ -92,9 +92,11 @@ SFX types:
 **Every segment MUST have a base visual + at least one element of visual density.** A bare image on screen with voiceover is a slideshow, not a video. Achieve density via:
 
 - Overlay (PiP meme, logo badge, ambient loop)
-- Text element (data callout, emphasis word)
+- Text element (data callout, emphasis word) — **ONLY on non-Remotion segments**
 - Motion (Remotion animation, video clip, ambient loop behind static image)
 - Composition (multiple logos/elements arranged on screen)
+
+**CRITICAL — No TextAsset on Remotion segments:** When a segment uses a Remotion-rendered video (CodeEditor, KineticText, DiagramFlow, BarChart, SplitCompare, CounterReveal), the video already contains text baked into its frames. Adding a `TextAsset` overlay produces ugly double-text. Remotion visuals are self-contained — they provide their own visual density through animation. The only overlays allowed on Remotion segments are small logo badges in corners and ambient loops underneath.
 
 **Minimum overlays per video:** 3 (PiP memes, reaction clips, logo badges, or ambient loops).
 

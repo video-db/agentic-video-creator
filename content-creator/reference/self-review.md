@@ -206,6 +206,8 @@ Check each of these. Collect all issues before deciding what to fix.
 - Overlay count < 3 (PiP memes, logo badges, ambient loops, stat counters) → FAIL.
 - Any `meme_insert` segment uses a raw uncaptioned template with no TextAsset overlay → FAIL.
 - Any non-ambient visual asset ID used for more than one segment → FAIL (background reuse).
+- Any TextAsset placed on a Remotion-rendered segment (code_editor, kinetic_text, diagram_animation, data_viz, split_screen) → FAIL (double-text — Remotion videos already contain baked-in text).
+- Audio drops/gaps between narration clips → FAIL (narration must chain continuously).
 
 **If this check fails:** Do not proceed with the rest of the review. Go back to Phase 3 and redo asset production. See the "Banned Production Approaches" table in asset-production.md.
 
@@ -321,11 +323,14 @@ Use the mismatch report from Align and Compare.
 - **Meme scaling:** Are memes displayed with `Fit.contain`? Cropped memes lose the joke. Download a meme frame and verify full template is visible.
 - **Shot variety score:** At least 5 different visual types used.
 - **Layering / Overlay count:** At least 3 overlay clips placed (logo badges, PiP reactions, ambient loops, stat counters). Count them from the timeline. Zero overlays = FAIL.
+- **Double-text check:** Are any Remotion-rendered segments (code_editor, kinetic_text, diagram_animation, data_viz, split_screen) also covered by a TextAsset overlay? If yes, FAIL — Remotion videos already contain baked-in text. Download a frame from these segments and verify no doubled text layers.
+- **Audio continuity:** Listen for narration drops at segment boundaries. Verify narration clips chain continuously with no gaps or overlaps.
 - **Background reuse:** Are any two segments using the same visual asset ID? (Ambient loops exempt.) If yes, FAIL.
 - **Static image hold time:** Any image on screen > 5 seconds? Flag for splitting.
 - **Energy consistency:** Pace never drops below one new visual every 5-7 seconds?
 - **SFX placement:** Whooshes on transitions, pops on reveals, stings on memes?
 - **Remotion usage:** If `REMOTION_AVAILABLE = True`, was Remotion used for at least one visual (code animation, diagram, data viz)? If available but unused, FAIL.
+- **Captions (if requested):** If user asked for captions, were auto-synced captions added (Phase 4.5)? Download 2+ frames and verify captions are visible at bottom-center with `box_highlight` animation active.
 
 **Briefing format checks:**
 - **Segment duration:** Any segment under 8s or over 20s?

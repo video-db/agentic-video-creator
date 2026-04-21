@@ -22,6 +22,8 @@ Large, impactful text on a stylized background that communicates one idea instan
 
 If `REMOTION_AVAILABLE = True`, use the KineticText component from [remotion-setup.md](remotion-setup.md). It supports `scale-in`, `slide-up`, `spring`, and `word-by-word` animations. Animated text is dramatically more impactful than a TextAsset that just appears.
 
+**IMPORTANT:** When using Remotion KineticText, the rendered video already contains all text baked into its frames. Do NOT also add a `TextAsset` overlay for the same segment — this causes ugly double-text where VideoDB's text renders on top of Remotion's. The Remotion video IS the complete visual — no supplementary TextAsset is needed.
+
 ```bash
 npx remotion render src/Root.tsx KineticText \
   "{REMOTION_DIR}/output/kinetic_{segment_id}.mp4" \
@@ -114,17 +116,39 @@ Every kinetic text MUST have a semi-opaque background bar:
 
 ### Color Accents
 
-Use accent colors to differentiate topics:
+Use accent colors AND background colors to differentiate topics. **Never use the same `bgColor` for all kinetic text segments** — it creates visual monotony across the video.
 
 ```
-Topic 1: Golden (#FFD700)
-Topic 2: Red (#FF4757)
-Topic 3: Blue (#3498DB)
-Topic 4: Purple (#9B59B6)
-Topic 5: Green (#2ECC71)
+Topic 1: accentColor "#FFD700" (golden)   bgColor "#1a0a00" (warm dark brown)
+Topic 2: accentColor "#FF4757" (red)       bgColor "#1a0005" (dark crimson)
+Topic 3: accentColor "#3498DB" (blue)      bgColor "#000a1a" (deep navy)
+Topic 4: accentColor "#9B59B6" (purple)    bgColor "#0d001a" (dark purple)
+Topic 5: accentColor "#2ECC71" (green)     bgColor "#001a0a" (dark forest)
+Hook:    accentColor "#FF4757" (red)       bgColor "#0d1117" (neutral dark)
+Takeaway: accentColor "#FFFFFF" (white)    bgColor "#0d1117" (neutral dark)
 ```
 
-Apply accent color to key words or use as the font color for the topic number.
+When rendering KineticText with Remotion, pass a different `bgColor` per topic:
+
+```python
+topic_palettes = [
+    {"accent": "#FFD700", "bg": "#1a0a00"},
+    {"accent": "#FF4757", "bg": "#1a0005"},
+    {"accent": "#3498DB", "bg": "#000a1a"},
+    {"accent": "#9B59B6", "bg": "#0d001a"},
+    {"accent": "#2ECC71", "bg": "#001a0a"},
+]
+
+for i, seg in enumerate(kinetic_text_segments):
+    palette = topic_palettes[i % len(topic_palettes)]
+    props = {
+        "lines": seg["lines"],
+        "animation": "spring",
+        "accentColor": palette["accent"],
+        "bgColor": palette["bg"],
+    }
+    # render with Remotion...
+```
 
 ### Position
 

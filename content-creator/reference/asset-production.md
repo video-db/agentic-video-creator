@@ -139,6 +139,8 @@ Hard minimums for any text rendered on screen (all sizes at 1280x720):
 
 Every text overlay MUST have a semi-opaque background bar (opacity 0.6-0.8).
 
+**CRITICAL — No TextAsset on Remotion segments:** Remotion-rendered videos (CodeEditor, KineticText, DiagramFlow, BarChart, SplitCompare, CounterReveal) already contain text baked into their frames. Do NOT add any `TextAsset` overlay on top. This causes ugly double-text. Remotion segments are visually self-contained and provide their own text through animation.
+
 **Known gotcha:** `TextAsset` at `Position.center` with `Background` may render invisibly. Use `Position.bottom` with `Offset(y=-0.3)` to simulate center placement.
 
 ## Production Order
@@ -147,8 +149,110 @@ Every text overlay MUST have a semi-opaque background bar (opacity 0.6-0.8).
 2. **Background music second.** Generate one track. Check `music.length` — loop if needed.
 3. **SFX third (if format requires it).** Whooshes, pops, comedic stings.
 4. **Visuals: source before generate.** Search asset library and external APIs in parallel where possible. Generate AI assets only for what can't be sourced.
+5. **Overlay assets (explainer format — MANDATORY).** After all main visuals are produced, make a second pass and produce overlay assets. See below.
 
 **Critical:** AI-generated videos are 5-8 seconds max. Never set clip duration beyond actual `.length`.
+
+## Overlay Asset Production (Phase 3, Step 5)
+
+**This step is MANDATORY for fireship-explainer format.** The self-review will FAIL any explainer video with fewer than 3 overlay clips. Produce overlay assets AFTER main visuals so you know which segments need them.
+
+### Planning pass
+
+Walk through the segment list and assign overlays:
+
+```python
+overlay_plan = []
+for seg in script["segments"]:
+    vtype = seg["visual_type"]
+    # Skip segments where overlays are banned
+    if vtype in ("kinetic_text", "meme_insert"):
+        continue
+    
+    if vtype == "code_editor":
+        # Code slides → logo badge for the language/framework
+        lang = seg.get("language", "javascript")
+        overlay_plan.append({
+            "segment_id": seg["id"],
+            "type": "logo_badge",
+            "source": f"simpleicons_{lang}",
+            "position": "top_right",
+            "scale": 0.08,
+        })
+    elif vtype == "diagram_animation" and seg.get("mentions_tech"):
+        # Diagrams mentioning a tech → logo badge
+        overlay_plan.append({
+            "segment_id": seg["id"],
+            "type": "logo_badge",
+            "source": f"simpleicons_{seg['mentions_tech']}",
+            "position": "top_right",
+            "scale": 0.08,
+        })
+    elif vtype in ("image_scene", "data_viz") and seg.get("duration", 5) > 4:
+        # Static visuals >4s → PiP reaction or ambient loop
+        overlay_plan.append({
+            "segment_id": seg["id"],
+            "type": "pip_reaction",
+            "query": "developer surprised",
+            "position": "bottom_right",
+            "scale": 0.20,
+        })
+
+# HARD CHECK
+if len(overlay_plan) < 3:
+    # Force-add overlays to the longest code_editor segments
+    code_segs = sorted(
+        [s for s in script["segments"] if s["visual_type"] == "code_editor"],
+        key=lambda s: s.get("duration", 5), reverse=True
+    )
+    for cs in code_segs:
+        if len(overlay_plan) >= 3:
+            break
+        if not any(o["segment_id"] == cs["id"] for o in overlay_plan):
+            overlay_plan.append({
+                "segment_id": cs["id"],
+                "type": "logo_badge",
+                "source": "simpleicons_" + cs.get("language", "javascript"),
+                "position": "top_right",
+                "scale": 0.08,
+            })
+
+print(f"Overlay plan: {len(overlay_plan)} overlays")
+assert len(overlay_plan) >= 3, f"FAIL: Only {len(overlay_plan)} overlays — need at least 3"
+```
+
+### Producing overlay assets
+
+| Overlay type | How to produce | Upload to |
+|---|---|---|
+| `logo_badge` | Download SVG from `https://cdn.simpleicons.org/{name}` → convert to PNG with Playwright screenshot → upload | `asset_coll` |
+| `pip_reaction` | GIPHY API search → download MP4. Fallback: `generate_image` with reaction prompt | `asset_coll` |
+| `ambient_loop` | Search asset library for existing ambient clips. Fallback: `generate_video("subtle particles dark background")` | `asset_coll` |
+| `stat_counter` | No asset needed — use `TextAsset` directly during composition | N/A |
+
+```python
+# Example: download logo as PNG via Playwright
+def download_logo_png(icon_name: str, work_dir: str, size: int = 128) -> str:
+    """Download a Simple Icons SVG and render to PNG."""
+    from playwright.sync_api import sync_playwright
+    svg_url = f"https://cdn.simpleicons.org/{icon_name}/white"
+    html = f'''<html><body style="margin:0;background:#0d1117;display:flex;
+    align-items:center;justify-content:center;width:{size}px;height:{size}px;">
+    <img src="{svg_url}" width="{size-16}" height="{size-16}"></body></html>'''
+    html_path = f"{work_dir}/screenshots/logo_{icon_name}.html"
+    png_path = f"{work_dir}/screenshots/logo_{icon_name}.png"
+    Path(html_path).write_text(html)
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page(viewport={"width": size, "height": size})
+        page.goto(f"file://{html_path}")
+        page.wait_for_load_state("networkidle")
+        page.screenshot(path=png_path)
+        browser.close()
+    return png_path
+```
+
+Save the overlay plan to `{WORK_DIR}/scripts/overlay_plan.json` for use during composition.
 
 ## Mixing Approaches
 

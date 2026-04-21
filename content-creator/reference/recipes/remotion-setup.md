@@ -4,6 +4,8 @@ Remotion is a React framework for programmatic video. It renders motion graphics
 
 **Remotion is NOT optional for Fireship-style videos.** Without it you get a slideshow of static images with voiceover. With it you get animated code typing, diagrams that build themselves, bars that race, text that flies in, and smooth graphic transitions between topics.
 
+**CRITICAL — Remotion outputs are self-contained:** Every Remotion-rendered video already contains text, labels, and annotations baked into its frames. During composition, do NOT add any `TextAsset` overlay on segments that use Remotion visuals. Adding TextAsset on top of Remotion output creates ugly double-text layering. Only small logo badges (corner-positioned, scale 0.08) and ambient loops (behind) are allowed on Remotion segments.
+
 ## Phase 0: Bootstrap
 
 Run this during Phase 0 pre-flight. It takes ~60 seconds.
@@ -196,9 +198,12 @@ export const KineticText: React.FC<KineticTextProps> = ({
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
 
+  // Subtle radial gradient from bgColor center to darker edges
+  const bg = `radial-gradient(ellipse at center, ${bgColor} 0%, #000000 120%)`;
+
   return (
     <div style={{
-      width: '100%', height: '100%', background: bgColor,
+      width: '100%', height: '100%', background: bg,
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center', gap: 16,
     }}>
@@ -340,7 +345,145 @@ export const CounterReveal: React.FC<CounterRevealProps> = ({
 
 ## Component: DiagramFlow
 
-See [diagram-flow.md](diagram-flow.md) for the full interface. The component animates SVG nodes appearing with spring physics and edges drawing as animated paths.
+Animated flow diagram with nodes that spring in and edges that draw themselves. Nodes auto-space across the canvas — **do NOT pass raw pixel coordinates**, pass logical positions and let the component fill the 1280x720 frame.
+
+See [diagram-flow.md](diagram-flow.md) for the full interface and style guide.
+
+```tsx
+// src/DiagramFlow.tsx
+import {useCurrentFrame, spring, useVideoConfig, interpolate} from 'remotion';
+
+interface DiagramNode {
+  id: string;
+  label: string;
+  color?: string;
+}
+interface DiagramEdge {
+  from: string;
+  to: string;
+  label?: string;
+}
+interface DiagramFlowProps {
+  nodes: DiagramNode[];
+  edges: DiagramEdge[];
+  title?: string;
+}
+
+export const DiagramFlow: React.FC<DiagramFlowProps> = ({nodes, edges, title}) => {
+  const frame = useCurrentFrame();
+  const {fps, width, height} = useVideoConfig();
+
+  const nodeW = 180;
+  const nodeH = 56;
+  const padding = 80;
+  const usableW = width - padding * 2;
+  const yCenter = height * 0.5;
+  const gap = nodes.length > 1 ? usableW / (nodes.length - 1) : 0;
+
+  const nodePositions = nodes.map((n, i) => ({
+    ...n,
+    cx: padding + (nodes.length === 1 ? usableW / 2 : i * gap),
+    cy: yCenter,
+  }));
+
+  return (
+    <div style={{width, height, background: '#0d1117', position: 'relative', overflow: 'hidden'}}>
+      {title && (
+        <div style={{
+          position: 'absolute', top: 40, width: '100%', textAlign: 'center',
+          fontSize: 36, fontWeight: 700, color: '#e6edf3',
+          fontFamily: "'Montserrat', sans-serif",
+          opacity: interpolate(frame, [0, 15], [0, 1], {extrapolateRight: 'clamp'}),
+        }}>
+          {title}
+        </div>
+      )}
+      <svg width={width} height={height} style={{position: 'absolute', top: 0, left: 0}}>
+        {edges.map((edge, i) => {
+          const fromNode = nodePositions.find(n => n.id === edge.from);
+          const toNode = nodePositions.find(n => n.id === edge.to);
+          if (!fromNode || !toNode) return null;
+          const delay = (Math.min(nodes.indexOf(nodes.find(n => n.id === edge.from)!), nodes.indexOf(nodes.find(n => n.id === edge.to)!)) + 1) * 10;
+          const progress = interpolate(
+            spring({frame: frame - delay, fps, config: {damping: 20, stiffness: 80}}),
+            [0, 1], [0, 1]
+          );
+          const x1 = fromNode.cx + nodeW / 2;
+          const x2 = toNode.cx - nodeW / 2;
+          const y = yCenter;
+          const lineLen = x2 - x1;
+          return (
+            <g key={i}>
+              <line x1={x1} y1={y} x2={x1 + lineLen * progress} y2={y}
+                stroke="#58a6ff" strokeWidth={2.5} strokeLinecap="round" />
+              {edge.label && progress > 0.8 && (
+                <text x={(x1 + x2) / 2} y={y - 16} textAnchor="middle"
+                  fill="#8b949e" fontSize={14} fontFamily="system-ui"
+                  opacity={interpolate(progress, [0.8, 1], [0, 1])}>
+                  {edge.label}
+                </text>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+      {nodePositions.map((node, i) => {
+        const delay = i * 8;
+        const s = spring({frame: frame - delay, fps, config: {damping: 12, stiffness: 100}});
+        const scale = interpolate(s, [0, 1], [0.3, 1]);
+        const opacity = interpolate(s, [0, 0.3, 1], [0, 1, 1]);
+        const bg = node.color || '#3498DB';
+        return (
+          <div key={node.id} style={{
+            position: 'absolute',
+            left: node.cx - nodeW / 2,
+            top: node.cy - nodeH / 2,
+            width: nodeW, height: nodeH,
+            borderRadius: 12,
+            background: `${bg}22`,
+            border: `2.5px solid ${bg}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transform: `scale(${scale})`,
+            opacity,
+            boxShadow: `0 0 20px ${bg}33`,
+          }}>
+            <span style={{
+              color: '#e6edf3', fontSize: 16, fontWeight: 600,
+              fontFamily: "'Montserrat', system-ui, sans-serif",
+              textAlign: 'center', padding: '0 8px',
+            }}>
+              {node.label}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+```
+
+**Key design decisions:**
+- Nodes auto-space evenly across the full canvas width (no manual x/y coords needed)
+- Node boxes are 180x56px with rounded corners, colored border, subtle glow
+- Edges draw themselves with spring physics
+- Title renders at top center
+- Each node springs in with staggered delay
+
+**Props example:**
+```json
+{
+  "nodes": [
+    {"id": "ctx", "label": "Context.ai", "color": "#ff4757"},
+    {"id": "gws", "label": "Google Workspace", "color": "#ffa502"},
+    {"id": "vercel", "label": "Vercel Systems", "color": "#ff6348"}
+  ],
+  "edges": [
+    {"from": "ctx", "to": "gws", "label": "OAuth"},
+    {"from": "gws", "to": "vercel", "label": "Pivot"}
+  ],
+  "title": "Attack Chain"
+}
+```
 
 ## Component: BarChart
 

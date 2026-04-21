@@ -22,24 +22,21 @@ Build animated SVG-based diagrams that construct themselves piece by piece.
 
 ### Component structure
 
+**Do NOT pass raw pixel coordinates for node positions.** The component in [remotion-setup.md](remotion-setup.md) auto-spaces nodes evenly across the 1280x720 canvas. Just pass nodes in order with `id`, `label`, and `color` — the layout is computed automatically.
+
 ```tsx
 interface DiagramFlowProps {
   nodes: Array<{
     id: string;
     label: string;
-    x: number;
-    y: number;
-    color?: string;
-    icon?: string;
+    color?: string;    // border + glow color, defaults to #3498DB
   }>;
   edges: Array<{
     from: string;
     to: string;
     label?: string;
-    animated?: boolean;
   }>;
-  highlightPath?: string[];  // node IDs to highlight at the end
-  buildSpeed?: number;       // ms between each element appearing
+  title?: string;       // shown at top center
 }
 ```
 

@@ -154,6 +154,7 @@ The skill supports 11 visual types. Pick based on what communicates best:
 2. Script           → structure findings into a video script (format-driven)
 3. Asset Production → source/create visuals (search → source → generate)
 4. Composition      → arrange on timeline, generate stream
+4.5 Captions        → (optional, user-requested) index spoken words, add auto-synced animated captions
 5. Self-Review      → index draft, critique, identify fixes
 6. Iterate/Deliver  → fix and recompose, or deliver final URL
 ```
@@ -216,6 +217,12 @@ See [reference/composition.md](reference/composition.md).
 
 Present the stream URL: `https://console.videodb.io/player?url={STREAM_URL}`
 
+### Phase 4.5: Add Captions (Optional)
+
+If the user explicitly requests captions, add speech-synced animated captions as a post-processing pass after the main stream is composed. Upload the stream, index spoken words, and recompose with a `CaptionAsset(src="auto")` overlay.
+
+See [reference/recipes/captions.md](reference/recipes/captions.md) for the full caption config, animation styles, and color presets. **Only run this phase if the user asks for captions.**
+
 ### Phase 5: Self-Review (mandatory)
 
 **Always runs at least once.** Upload the draft, index it, compare intended vs actual. Critique as a director.
@@ -250,6 +257,7 @@ If issues remain and under `MAX_ITERATIONS`, fix and recompose. Otherwise delive
 | Data Viz | [recipes/data-viz.md](reference/recipes/data-viz.md) |
 | Split Compare | [recipes/split-compare.md](reference/recipes/split-compare.md) |
 | Overlay Techniques | [recipes/overlay-techniques.md](reference/recipes/overlay-techniques.md) |
+| Captions | [recipes/captions.md](reference/recipes/captions.md) |
 
 ### Sourcing Recipe Files
 

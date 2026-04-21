@@ -99,8 +99,15 @@ If Imgflip captioning isn't available, use Memegen.link to produce a pre-caption
 ```python
 def caption_meme_memegen(template_id: str, top: str, bottom: str, work_dir: str) -> str:
     """Generate captioned meme via Memegen.link. Free, no auth."""
-    top_clean = top.replace(" ", "_").replace("?", "~q").replace("#", "~h").replace("/", "~s")
-    bottom_clean = bottom.replace(" ", "_").replace("?", "~q").replace("#", "~h").replace("/", "~s")
+    def encode_text(text: str) -> str:
+        return (text
+            .replace("-", "--").replace("_", "__")
+            .replace(" ", "_").replace("?", "~q").replace("#", "~h")
+            .replace("/", "~s").replace("\"", "''").replace("'", "~a")
+            .replace("%", "~p").replace("&", "~a")
+        )
+    top_clean = encode_text(top)
+    bottom_clean = encode_text(bottom)
     url = f"https://api.memegen.link/images/{template_id}/{top_clean}/{bottom_clean}.png"
     resp = requests.get(url)
     if resp.status_code == 200:
@@ -134,11 +141,25 @@ def get_memegen_templates() -> list:
 ```python
 def get_memegen_url(template_id: str, top: str, bottom: str) -> str:
     """Construct Memegen.link image URL with captions."""
-    # Replace spaces with underscores, special chars with ~
-    top_clean = top.replace(" ", "_").replace("?", "~q").replace("#", "~h")
-    bottom_clean = bottom.replace(" ", "_").replace("?", "~q").replace("#", "~h")
+    def encode_text(text: str) -> str:
+        return (text
+            .replace("-", "--")      # literal dash
+            .replace("_", "__")      # literal underscore
+            .replace(" ", "_")       # space → underscore
+            .replace("?", "~q")
+            .replace("#", "~h")
+            .replace("/", "~s")
+            .replace("\"", "''")     # double quote → two single quotes (Memegen doesn't support ")
+            .replace("'", "~a")      # single quote
+            .replace("%", "~p")
+            .replace("&", "~a")      # ampersand (appears as & in output if not escaped)
+        )
+    top_clean = encode_text(top)
+    bottom_clean = encode_text(bottom)
     return f"https://api.memegen.link/images/{template_id}/{top_clean}/{bottom_clean}.png"
 ```
+
+**Common gotcha:** Double quotes in meme text will appear as `&quot;` or `&` if not escaped. Replace `"` with `''` (two single quotes) which reads the same in Impact font at meme sizes.
 
 Note: Memegen.link has a small watermark on free tier. Acceptable for fast-cut 2-3 second meme flashes.
 
